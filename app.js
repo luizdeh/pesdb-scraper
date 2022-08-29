@@ -9,24 +9,49 @@ async function getPageNumbers() {
 
   	let pageNumberArray = [];
   	$('.pages > a').each((_, e) => {
-  		pageNumberArray.push(Number($(e).text()));
+      const number = Number($(e).text());
+      console.log(number)
+  		pageNumberArray.push(number)
   	});
   	const max = Math.max(...pageNumberArray);
   	pageNumberArray = [...Array(Number(max)).keys()];
   	pageNumberArray.shift();
-  	// const pageNumbersArray = [];
-  	// pageNumberArray.forEach((item) => {
-  	// 	const link = 'https://pesdb.net/pes2021/?page=';
-  	// 	const linkNumber = String(item);
-  	// 	pageNumbersArray.push(link.concat(linkNumber));
-  	// });
-    console.log(pageNumberArray)
-    return pageNumberArray
+
+  	const pageNumbersArray = [];
+  	pageNumberArray.forEach((item) => {
+  		const link = 'https://pesdb.net/pes2021/?page=';
+  		const linkNumber = String(item);
+  		pageNumbersArray.push(link.concat(linkNumber));
+  	});
+    return pageNumbersArray
+
   } catch (e) {
     console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`)
   }
 }
-getPageNumbers()
+// getPageNumbers()
+// getPageNumbers().then((data) => data.forEach((page) => getPlayersFromPage(page)))
+
+async function getPlayersFromPage(index) {
+  try {
+  const response = await fetch(`https://pesdb.net/pes2021/?page=${Number(index)}`)
+  const data = await response.text()
+  const $ = cheerio.load(data)
+
+  let playerId = []
+  $('.players tbody tr').each((i, elem) => {
+    const link = $(elem).find('td a').attr('href')
+    link 
+      ? playerId.push(link.slice(6))
+      : null
+  })
+  // console.log(playerId)
+  return playerId
+
+  } catch(e) {
+    console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`)
+  }
+}
 
 async function getPlayerStats(id) {
   try {
@@ -77,9 +102,6 @@ async function getPlayerStats(id) {
     })
     info.push({ BestPositions: bestPos })
     info.push({ GoodPositions: goodPos })
-    
-    console.log(bestPos)
-    console.log(goodPos)
 
     // get player's playing styles and push to the array
     let styles = []
@@ -93,18 +115,48 @@ async function getPlayerStats(id) {
     styles.splice(idToRemove,highestId)
     const newStyles = styles.map(item => item.style)
     info.push({PlayingStyles: [newStyles]})
-    console.log(newStyles)
 
     // get the player's stats and push to the array
     playerStatsOne.find('table tbody tr').each((i, elem) => pushStat(elem, stats))
     playerStatsTwo.find('table tbody tr').each((i, elem) => pushStat(elem, stats))
     items.push(stats)
   
-    console.log(items)
+    // console.log(items)
 
   } catch (e) {
     console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`)
   }
 }
-getPlayerStats('7511')
 
+function delay(t, val) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(val)
+    }, t)
+  })
+}
+
+async function main() {
+  try {
+    // for each page number, run getPlayersFromPage with a timeout
+   
+    const pageNumbers = await getPageNumbers()
+
+    // this works but only returns the first page
+    // await pageNumbers.reduce(async (promise, page) => {
+    //   await promise
+    //   const players = await getPlayersFromPage(page)
+    //   console.log(players)
+    // }, Promise.resolve())
+    //
+
+    pageNumbers.forEach(async (page) => {
+      const players = await getPlayersFromPage(page)
+      console.log(players)
+    }) 
+
+  } catch(e) {
+    console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`)
+  }
+}
+// main()
