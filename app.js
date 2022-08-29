@@ -128,14 +128,6 @@ async function getPlayerStats(id) {
   }
 }
 
-function delay(t, val) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(val)
-    }, t)
-  })
-}
-
 async function main() {
   try {
     // for each page number, run getPlayersFromPage with a timeout
