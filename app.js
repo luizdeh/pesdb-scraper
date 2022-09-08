@@ -55,40 +55,56 @@ async function getPlayersFromPage() {
             playersId.push(links.slice(6));
           }
         });
-        return [...playersId];
+        return playersId.flat();
       })
     );
+  
+    return tr
 
-    tr.then((val) => {
-      val.map(async (arr) => {
-        const baseUrl = "https://pesdb.net/pes2021/?id=";
-        const links = await fetchPromiseUrl(arr, baseUrl);
-        const stats = Promise.all(
-          links.map(async (res) => {
-            const data = await res.text();
-            const players = getPlayerStats(data)
-            console.log(players)
-          })
-        );
-        console.log(stats);
-      });
-    });
+    // tr.then((val) => {
+    //   val.map(async (arr) => {
+    //     const baseUrl = "https://pesdb.net/pes2021/?id=";
+    //     const links = await fetchPromiseUrl(arr, baseUrl);
+    //     const stats = Promise.all(
+    //       links.map(async (res) => {
+    //         const data = await res.text();
+    //         const players = getPlayerStats(data)
+    //         console.log(players)
+    //       })
+    //     );
+    //     console.log(stats);
+    //   });
+    // });
   } catch (e) {
     console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`);
   }
 }
 
 async function test() {
-  await getPlayersFromPage();
+  const playerLinks = await getPlayersFromPage();
+  playerLinks.flat().map(async (link) => {
+    const url = "https://pesdb.net/pes2021/?id="
+    const links = await fetchPromiseUrl(link, url)
+    links.map(async (res) => {
+      const data = await res.text()
+      console.log(data)
+      // const player = await getPlayerStats(data)
+
+
+    })
+    return player
+  })
 }
 test();
 
-async function getPlayerStats(data) {
+async function getPlayerStats(id) {
   try {
     // fetch the player's page and load cheerio
     // const page = `https://pesdb.net/pes2021/?id=${id}`;
-    // const response = await fetch(page);
-    // const data = await response.text();
+    const page = await fetchPromiseUrl(id)
+    const response = await fetch(page)
+    // const response = await fetchPromiseUrl(id, page);
+    const data = await response.text();
     const $ = cheerio.load(data);
 
     // store the cheerio values of the elements we want to traverse in
@@ -108,11 +124,11 @@ async function getPlayerStats(data) {
       let el = $(element).find("th").text().trim().slice(0, -1);
       el = el.replace(/\s/g, "");
       let val = $(element).find("td").text().trim();
-      el && val ? arr.push({ [el]: val }) : null;
+      el && val ? arr.push({[el]: val}) : null;
     }
     // get the player's information and push to the array
     playerInfo.find("table tbody tr").each((i, elem) => pushStat(elem, info));
-    items.push(info);
+    items.push(...info);
 
     // get player's playable positions and push to the info array
     let bestPos = [];
@@ -121,15 +137,15 @@ async function getPlayerStats(data) {
     positions.each((i, elem) => {
       if ($(elem).attr("class") === "pos2") {
         const pos = $(elem).text().trim();
-        bestPos.push({ pos });
+        bestPos.push(pos);
       }
       if ($(elem).attr("class") === "pos1") {
         const pos = $(elem).text().trim();
-        goodPos.push({ pos });
+        goodPos.push(pos);
       }
     });
-    info.push({ BestPositions: bestPos });
-    info.push({ GoodPositions: goodPos });
+    items.push({BestPositions: [...bestPos]});
+    items.push({GoodPositions: [...goodPos]});
 
     // get player's playing styles and push to the array
     let styles = [];
@@ -144,7 +160,7 @@ async function getPlayerStats(data) {
     const highestId = Math.max.apply(null, ids);
     styles.splice(idToRemove, highestId);
     const newStyles = styles.map((item) => item.style);
-    info.push({ PlayingStyles: [newStyles] });
+    items.push({ PlayingStyles: [...newStyles] });
 
     // get the player's stats and push to the array
     playerStatsOne
@@ -154,7 +170,8 @@ async function getPlayerStats(data) {
       .find("table tbody tr")
       .each((i, elem) => pushStat(elem, stats));
     items.push(stats);
-
+    
+    console.log(`=> FECTHED PLAYER : ${items[0].PlayerName}`)
     return items;
   } catch (e) {
     console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`);
