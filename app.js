@@ -1,12 +1,19 @@
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
-import fs from 'fs'
+import fs from "fs";
 // import { writefile } from "node:fs"
-import fsPromises from "node:fs"
+import fsPromises from "node:fs";
 
-const output = './output'
+const output = "./output";
+
+// const randomDelay = 1000 * Math.random(2, 4);
 
 const delay = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
+const delay2ms = (ms = 2000) => new Promise((r) => setTimeout(r, ms));
+const delay3ms = (ms = 3000) => new Promise((r) => setTimeout(r, ms));
+
+// const controller = new AbortController()
+// const signal = controller.signal
 
 const fetchPromiseUrl = async (items, url) => {
   let results = [];
@@ -33,21 +40,30 @@ async function getPageNumbers() {
     pageNumberArray = [...Array(Number(max + 1)).keys()];
     pageNumberArray.shift();
 
-    const testArray = [1,2,3];
-    return testArray;
-    // return pageNumberArray
+    console.log(`=> Generating numbered array
+      .
+      .
+      .`);
+    // const testArray = [1,2];
+    // const testArray = Array.from(Array(51).keys()).shift()
+    // return testArray;
+    return pageNumberArray
   } catch (e) {
-    console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`);
+    console.error(`[ ERROR - getPageNumbers ] : ${e}`);
   }
 }
 
 async function getPlayersFromPage() {
   try {
     const pageNumbers = await getPageNumbers();
+    console.log(`=> Searching for links on ${pageNumbers.length} pages
+      .
+      .
+      .`)
     const baseUrl = "https://pesdb.net/pes2021/?page=";
     const urls = await fetchPromiseUrl(pageNumbers, baseUrl);
     const tr = Promise.all(
-      urls.map(async (res) => {
+      urls.map(async (res, index) => {
         let playersId = [];
         const data = await res.text();
         const $ = cheerio.load(data);
@@ -57,12 +73,16 @@ async function getPlayersFromPage() {
             playersId.push(links.slice(6));
           }
         });
+        console.log(`=> Fetching player links from page ${index + 1}
+          .
+          .
+          .`);
         return playersId.flat();
       })
     );
     return tr;
   } catch (e) {
-    console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`);
+    console.error(`[ ERROR - getPlayersFromPage ] : ${e}`);
   }
 }
 
@@ -87,12 +107,14 @@ async function getPlayerStats(data) {
       let el = $(element).find("th").text().trim().slice(0, -1);
       el = el.replace(/\s/g, "");
       let val = $(element).find("td").text().trim();
-      el && val ? arr.push({ [el]: val }) : null;
+      el && val ? arr.push({ [el]: val }) : null
     }
     // get the player's information and push to the array
-    playerInfo.find("table tbody tr").each((i, elem) => pushStat(elem, info));
+    playerInfo.find("table tbody tr").each((i, elem) => {
+      pushStat(elem, info)
+    })
     items.push(...info);
-
+    
     // get player's playable positions and push to the info array
     let bestPos = [];
     let goodPos = [];
@@ -123,6 +145,7 @@ async function getPlayerStats(data) {
     const highestId = Math.max.apply(null, ids);
     styles.splice(idToRemove, highestId);
     const newStyles = styles.map((item) => item.style);
+    newStyles.shift()
     items.push({ PlayingStyles: [...newStyles] });
 
     // get the player's stats and push to the array
@@ -134,63 +157,101 @@ async function getPlayerStats(data) {
       .each((i, elem) => pushStat(elem, stats));
     items.push(stats);
 
-    console.log(`=> Fetched player : ${items[0].PlayerName}`);
-
     return items;
-
   } catch (e) {
-    console.error(`[ DEU RUIM AQUI Ó JOGADOR ] : ${e}`);
+    console.error(`[ ERROR - getPlayerStats ] : ${e}`);
   }
 }
 
 async function mcdur() {
   try {
     if (!fs.existsSync(output)) {
-      fs.mkdirSync(output)
-      console.log(`Directory 'output' created successfully!`)
+      fs.mkdirSync(output);
+      console.log(`=> Directory 'output' created successfully!
+        .
+        .
+        .`);
+    } else {
+      console.log(`=> Directory 'output' already exists, no worries.  
+        .
+        .
+        .`)
     }
-  // await fs.promises.mkdir(path, { recursive: true })
-  } catch(e) {
-    console.error(e)
+  } catch (e) {
+    console.error(e);
   }
 }
-mcdur()
 
 const fetchPlayers = async (items, url) => {
-  let results = [];
-  for (let index = 0; index <= items.length - 1; index++) {
-    await delay();
-    const ids = items[index];
-    console.log(`=> Fetching player ID : ${ids}`);
-    const res = await fetch(`${url}${ids}`);
-    results.push(res);
+  try {
+    let results = [];
+    let time = items.length * 2.5
+    for (let index = 0; index <= items.length - 1; index++) {
+      const seconds = time - (index*2.5)
+      const minutes = Math.round(seconds/60)
+      const ids = items[index];
+      const res = await fetch(`${url}${ids}`);
+      if (index % 2 === 0) {
+        await delay3ms();
+        console.log(`=> Fetching player ID : ${ids}
+            => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
+          `);
+        results.push(res);
+      } else {
+        await delay2ms();
+        console.log(`=> Fetching player ID : ${ids}
+            => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
+          `);
+        results.push(res);
+      }
+    }
+    return results;
+  } catch (e) {
+    console.error(`[ ERROR - fetchPlayers ] : ${e}`);
   }
-  return results;
 };
 
 async function assemblePlayers() {
-  const playerLinks = await getPlayersFromPage();
-  const players = playerLinks.flat();
-  const url = "https://pesdb.net/pes2021/?id=";
-  const links = await fetchPlayers(players, url);
-  let result = [];
-  for (let i = 0; i <= links.length - 1; i++) {
-    await delay();
-    const data = await links[i].text();
-    const player = await getPlayerStats(data);
-    result.push(player);
+  try {
+    console.log(`=> Getting ready to scrape pesdb.net (2021)
+      .
+      .
+      .
+      `)
+    const playerLinks = await getPlayersFromPage();
+    const players = playerLinks.flat();
+    const url = "https://pesdb.net/pes2021/?id=";
+    const links = await fetchPlayers(players, url);
+    let result = [];
+    for (let i = 0; i <= links.length - 1; i++) {
+      const data = await links[i].text();
+      const player = await getPlayerStats(data);
+      const playerUnd = player[0].PlayerName;
+      if (!playerUnd) console.log(links[i]);
+      console.log(`
+        => Fetched player : ${player[0].PlayerName}
+          => ${i+1} of ${links.length} players
+        `);
+      result.push(player);
+    }
+    mcdur()
+    console.log(`=> Writing to file: ./output/players.json
+    .
+    .
+    .`);
+    fsPromises.writeFile(
+      "./output/players.json",
+      JSON.stringify(result),
+      (e) => {
+        if (e) throw e;
+      }
+    );
+    console.log(`=> Done!
+
+      CAUTION: File is probably huge. Take care now, bye bye.`);
+  } catch (e) {
+    console.error(`[ ERROR - assemblePlayers ] : ${e}`);
   }
-  console.log(result)
-  return result
 }
 
-const getEm = async () => {
-  const players = await assemblePlayers();
-  console.log(`writing to file
-    .
-    .
-    .`)
-  fsPromises.writeFile('./output/players.json', JSON.stringify(players), (e) => { if (e) throw e })
-  console.log(`Done!`)
-}
-getEm()
+assemblePlayers();
