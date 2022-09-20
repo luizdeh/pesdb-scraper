@@ -21,6 +21,14 @@ You can edit the app.js file to gather as little as 1 page of player information
 
 The application takes its time to run, so as not to let the server interrupt the calls. If you want all the players, it will take over 4 hours to finish.
 
+## why
+
+Because there is no API from Konami or pesdb.net, so I thought I'd find a way to get the information I wanted.
+
+## annoyances
+
+Players that are FREE AGENTS don't have a 'SquadNumber' ( the number that goes on their shirt ), so the array for these players has one less line. When you work with the resulting file, just keep that in mind.
+
 ## colaborators
 
 the one and only Eduardo Grigolo, aka @azedo
