@@ -37,7 +37,7 @@ async function getPageNumbers() {
       pageNumberArray.push(number);
     });
     const max = Math.max(...pageNumberArray);
-    pageNumberArray = [...Array(Number(max + 1)).keys()];
+    pageNumberArray = [...Array(Number(max)).keys()];
     pageNumberArray.shift();
 
     console.log(`=> Generating numbered array
