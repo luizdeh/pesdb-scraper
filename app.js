@@ -6,19 +6,12 @@ import fsPromises from "node:fs";
 
 const output = "./output";
 
-// const randomDelay = 1000 * Math.random(2, 4);
-
-const delay = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
-const delay2ms = (ms = 2000) => new Promise((r) => setTimeout(r, ms));
-const delay3ms = (ms = 3000) => new Promise((r) => setTimeout(r, ms));
-
-// const controller = new AbortController()
-// const signal = controller.signal
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const fetchPromiseUrl = async (items, url) => {
   let results = [];
   for (let index = 1; index <= items.length; index++) {
-    await delay();
+    await delay(1000);
     const res = await fetch(`${url}${index}`);
     results.push(res);
   }
@@ -45,9 +38,10 @@ async function getPageNumbers() {
       .
       .`);
     // const testArray = [1,2];
-    // const testArray = Array.from(Array(51).keys()).shift()
-    // return testArray;
-    return pageNumberArray
+    const testArray = Array.from(Array(51).keys())
+    testArray.shift()
+    return testArray;
+    // return pageNumberArray
   } catch (e) {
     console.error(`[ ERROR - getPageNumbers ] : ${e}`);
   }
@@ -192,13 +186,13 @@ const fetchPlayers = async (items, url) => {
       const ids = items[index];
       const res = await fetch(`${url}${ids}`);
       if (index % 2 === 0) {
-        await delay3ms();
+        await delay(3000);
         console.log(`=> Fetching player ID : ${ids}
             => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
           `);
         results.push(res);
       } else {
-        await delay2ms();
+        await delay(2000);
         console.log(`=> Fetching player ID : ${ids}
             => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
           `);
