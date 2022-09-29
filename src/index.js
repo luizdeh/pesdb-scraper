@@ -12,6 +12,7 @@ const fetchPromiseUrl = async (items, url) => {
   let results = [];
   for (let index = 1; index <= items.length; index++) {
     await delay(1000);
+    console.log(`=> Got links from page ${index} out of ${items.length} pages`)
     const res = await fetch(`${url}${index}`);
     results.push(res);
   }
