@@ -9,8 +9,6 @@ const output = "./output";
 // const randomDelay = 1000 * Math.random(2, 4);
 
 const delay = (ms = 1000) => new Promise((r) => setTimeout(r, ms));
-const delay2ms = (ms = 2000) => new Promise((r) => setTimeout(r, ms));
-const delay3ms = (ms = 3000) => new Promise((r) => setTimeout(r, ms));
 
 // const controller = new AbortController()
 // const signal = controller.signal
@@ -192,13 +190,13 @@ const fetchPlayers = async (items, url) => {
       const ids = items[index];
       const res = await fetch(`${url}${ids}`);
       if (index % 2 === 0) {
-        await delay3ms();
+        await delay(3000);
         console.log(`=> Fetching player ID : ${ids}
             => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
           `);
         results.push(res);
       } else {
-        await delay2ms();
+        await delay(2000);
         console.log(`=> Fetching player ID : ${ids}
             => ${index+1} of ${items.length} players ( ~${minutes.toFixed(0)} minute(s) to go )
           `);
